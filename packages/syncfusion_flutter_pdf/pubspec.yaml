@@ -4,7 +4,7 @@ version: 30.1.37
 homepage: https://github.com/syncfusion/flutter-widgets/tree/master/packages/syncfusion_flutter_pdf
 
 environment:
-  sdk: ^3.7.0-0
+  sdk: '>=3.0.0-308.0.dev <4.0.0'
 
 dependencies:
   flutter:
