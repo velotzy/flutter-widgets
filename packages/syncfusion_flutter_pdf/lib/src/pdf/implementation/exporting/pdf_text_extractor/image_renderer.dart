@@ -25,25 +25,14 @@ class ImageRenderer {
     _graphicsState = GraphicStateCollection();
     graphicsObjects = GraphicObjectDataCollection();
     final GraphicObjectData newObject = GraphicObjectData();
-    newObject.currentTransformationMatrix = MatrixHelper(
-      1.0,
-      0.0,
-      0.0,
-      1.0,
-      0.0,
-      0.0,
-    );
-    final MatrixHelper transformMatrix =
-        g != null ? g.transformMatrix! : _graphicsObject!.transformMatrix!;
+    newObject.currentTransformationMatrix = MatrixHelper(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+    final MatrixHelper transformMatrix = g != null ? g.transformMatrix! : _graphicsObject!.transformMatrix!;
     newObject.currentTransformationMatrix!.translate(
       transformMatrix.offsetX / 1.333,
       transformMatrix.offsetY / 1.333,
     );
     newObject.drawing2dMatrixCTM = MatrixHelper(1, 0, 0, 1, 0, 0);
-    newObject.drawing2dMatrixCTM!.translate(
-      transformMatrix.offsetX / 1.333,
-      transformMatrix.offsetY / 1.333,
-    );
+    newObject.drawing2dMatrixCTM!.translate(transformMatrix.offsetX / 1.333, transformMatrix.offsetY / 1.333);
     newObject.documentMatrix = MatrixHelper(
       1.33333333333333 * (dpiX / 96) * transformMatrix.m11,
       0,
@@ -224,8 +213,7 @@ class ImageRenderer {
 
   /// internal method
   void renderAsImage() {
-    final PdfRecordCollection? pdfRecordCollection =
-        _isType3Font ? _type3RecordCollection : _contentElements;
+    final PdfRecordCollection? pdfRecordCollection = _isType3Font ? _type3RecordCollection : _contentElements;
     if (pdfRecordCollection != null) {
       final List<PdfRecord> records = pdfRecordCollection.recordCollection;
       for (int i = 0; i < records.length; i++) {
@@ -240,7 +228,7 @@ class ImageRenderer {
         switch (token.trim()) {
           case 'BDC':
             {
-              if (elements!.length > 1) {
+              if (elements != null && elements.length > 1) {
                 final String layerID = elements[1].replaceAll('/', '');
                 if (_layersVisibilityDictionary.containsKey(layerID) &&
                     !_layersVisibilityDictionary[layerID]!) {
@@ -249,15 +237,13 @@ class ImageRenderer {
                 if (_skipRendering) {
                   _inlayersCount++;
                 }
-                if (elements[1].contains('ActualText') &&
-                    elements[1].contains('(')) {
+                if (elements[1].contains('ActualText') && elements[1].contains('(')) {
                   _actualText = elements[1].substring(
                     elements[1].indexOf('(') + 1,
                     elements[1].lastIndexOf(')'),
                   );
                   const String bigEndianPreambleString = 'þÿ';
-                  if (_actualText != null &&
-                      _actualText!.startsWith(bigEndianPreambleString)) {
+                  if (_actualText != null && _actualText!.startsWith(bigEndianPreambleString)) {
                     _actualText = null;
                   }
                 }
@@ -280,8 +266,7 @@ class ImageRenderer {
               final GraphicObjectData data = GraphicObjectData();
               if (graphicsObjects!.count > 0) {
                 final GraphicObjectData prevData = graphicsObjects!.last;
-                data.currentTransformationMatrix =
-                    prevData.currentTransformationMatrix;
+                data.currentTransformationMatrix = prevData.currentTransformationMatrix;
                 data.mitterLength = prevData.mitterLength;
                 data.textLineMatrix = prevData.textLineMatrix;
                 data.documentMatrix = prevData.documentMatrix;
@@ -316,39 +301,43 @@ class ImageRenderer {
             }
           case 'Tr':
             {
-              _renderingMode = int.parse(elements![0]);
+              if (elements != null && elements.isNotEmpty) {
+                _renderingMode = int.parse(elements[0]);
+              }
               break;
             }
           case 'Tm':
             {
-              final double a = double.tryParse(elements![0])!;
-              final double b = double.tryParse(elements[1])!;
-              final double c = double.tryParse(elements[2])!;
-              final double d = double.tryParse(elements[3])!;
-              final double e = double.tryParse(elements[4])!;
-              final double f = double.tryParse(elements[5])!;
-              _setTextMatrix(a, b, c, d, e, f);
-              if (_textMatrix) {
-                _graphicsObject!.restore(_graphicsState!.pop()!);
+              if (elements != null && elements.length >= 6) {
+                final double a = double.tryParse(elements[0])!;
+                final double b = double.tryParse(elements[1])!;
+                final double c = double.tryParse(elements[2])!;
+                final double d = double.tryParse(elements[3])!;
+                final double e = double.tryParse(elements[4])!;
+                final double f = double.tryParse(elements[5])!;
+                _setTextMatrix(a, b, c, d, e, f);
+                if (_textMatrix) {
+                  _graphicsObject!.restore(_graphicsState!.pop()!);
+                }
+                final GraphicsState? state = _graphicsObject!.save();
+                _graphicsState!.push(state);
+                _graphicsObject!.multiplyTransform(MatrixHelper(a, -b, -c, d, e, -f));
+                currentLocation = Offset.zero;
+                _textMatrix = true;
               }
-              final GraphicsState? state = _graphicsObject!.save();
-              _graphicsState!.push(state);
-              _graphicsObject!.multiplyTransform(
-                MatrixHelper(a, -b, -c, d, e, -f),
-              );
-              currentLocation = Offset.zero;
-              _textMatrix = true;
               break;
             }
           case 'cm':
             {
-              final double a = double.tryParse(elements![0])!;
-              final double b = double.tryParse(elements[1])!;
-              final double c = double.tryParse(elements[2])!;
-              final double d = double.tryParse(elements[3])!;
-              final double e = double.tryParse(elements[4])!;
-              final double f = double.tryParse(elements[5])!;
-              drawing2dMatrixCTM = _setMatrix(a, b, c, d, e, f);
+              if (elements != null && elements.length >= 6) {
+                final double a = double.tryParse(elements[0])!;
+                final double b = double.tryParse(elements[1])!;
+                final double c = double.tryParse(elements[2])!;
+                final double d = double.tryParse(elements[3])!;
+                final double e = double.tryParse(elements[4])!;
+                final double f = double.tryParse(elements[5])!;
+                drawing2dMatrixCTM = _setMatrix(a, b, c, d, e, f);
+              }
               break;
             }
           case 'BT':
@@ -371,8 +360,7 @@ class ImageRenderer {
               }
               if (_renderingMode == 2 &&
                   pdfRecordCollection.recordCollection.length > i + 1 &&
-                  pdfRecordCollection.recordCollection[i + 1].operatorName !=
-                      'q') {
+                  pdfRecordCollection.recordCollection[i + 1].operatorName != 'q') {
                 _renderingMode = 0;
               }
               break;
@@ -388,8 +376,8 @@ class ImageRenderer {
               if (_skipRendering) {
                 break;
               }
-              if (fontSize != 0) {
-                _renderTextElementWithSpacing(elements!, token);
+              if (fontSize != 0 && elements != null) {
+                _renderTextElementWithSpacing(elements, token);
               }
               break;
             }
@@ -398,75 +386,83 @@ class ImageRenderer {
               if (_skipRendering) {
                 break;
               }
-              if (fontSize != 0) {
-                _renderTextElementWithLeading(elements!, token);
+              if (fontSize != 0 && elements != null) {
+                _renderTextElementWithLeading(elements, token);
               }
               break;
             }
           case "'":
             {
               _moveToNextLineWithCurrentTextLeading();
-              final MatrixHelper transformMatrix = _getTextRenderingMatrix(
-                false,
-              );
+              final MatrixHelper transformMatrix = _getTextRenderingMatrix(false);
               objects.textMatrixUpdate = transformMatrix;
               if (_textScaling != 100) {
                 final GraphicsState? state = _graphicsObject!.save();
                 _graphicsState!.push(state);
                 _graphicsObject!.scaleTransform(_textScaling! / 100, 1);
                 isScaledText = true;
-                currentLocation = Offset(
-                  currentLocation!.dx / (_textScaling! / 100),
-                  currentLocation!.dy,
-                );
+                currentLocation = Offset(currentLocation!.dx / (_textScaling! / 100), currentLocation!.dy);
               }
-              _renderTextElementWithLeading(elements!, token);
+              if (elements != null) {
+                _renderTextElementWithLeading(elements, token);
+              }
               break;
             }
 
           case 'Tf':
             {
-              _renderFont(elements!);
+              if (elements != null) {
+                _renderFont(elements);
+              }
               break;
             }
           case 'TD':
             {
-              currentLocation = Offset(
-                currentLocation!.dx + double.tryParse(elements![0])!,
-                currentLocation!.dy - double.tryParse(elements[1])!,
-              );
-              _moveToNextLineWithLeading(elements);
+              if (elements != null && elements.length >= 2) {
+                currentLocation = Offset(
+                  currentLocation!.dx + double.tryParse(elements[0])!,
+                  currentLocation!.dy - double.tryParse(elements[1])!,
+                );
+                _moveToNextLineWithLeading(elements);
+              }
               break;
             }
           case 'Td':
             {
-              final double dx = double.tryParse(elements![0])!;
-              final double dy = double.tryParse(elements[1])!;
-              currentLocation = Offset(
-                currentLocation!.dx + dx,
-                currentLocation!.dy - dy,
-              );
-              _moveToNextLine(dx, dy);
+              if (elements != null && elements.length >= 2) {
+                final double dx = double.tryParse(elements[0])!;
+                final double dy = double.tryParse(elements[1])!;
+                currentLocation = Offset(currentLocation!.dx + dx, currentLocation!.dy - dy);
+                _moveToNextLine(dx, dy);
+              }
               break;
             }
           case 'TL':
             {
-              textLeading = -double.tryParse(elements![0])!;
+              if (elements != null && elements.isNotEmpty) {
+                textLeading = -double.tryParse(elements[0])!;
+              }
               break;
             }
           case 'Tw':
             {
-              _getWordSpacing(elements!);
+              if (elements != null) {
+                _getWordSpacing(elements);
+              }
               break;
             }
           case 'Tc':
             {
-              _getCharacterSpacing(elements!);
+              if (elements != null) {
+                _getCharacterSpacing(elements);
+              }
               break;
             }
           case 'Tz':
             {
-              _getScalingFactor(elements!);
+              if (elements != null) {
+                _getScalingFactor(elements);
+              }
               break;
             }
           case 'Do':
@@ -474,7 +470,9 @@ class ImageRenderer {
               if (_skipRendering) {
                 break;
               }
-              _getXObject(elements!);
+              if (elements != null) {
+                _getXObject(elements);
+              }
               break;
             }
           case 're':
@@ -483,14 +481,12 @@ class ImageRenderer {
                 break;
               }
               if (i < pdfRecordCollection.count &&
-                  pdfRecordCollection.recordCollection[i + 1].operatorName ==
-                      'f') {
+                  pdfRecordCollection.recordCollection[i + 1].operatorName == 'f') {
                 _isNextFill = true;
               }
-              if (!(drawing2dMatrixCTM!.m11 == 0 &&
-                  drawing2dMatrixCTM!.m21 == 0 &&
-                  _isNextFill)) {
-                _getClipRectangle(elements!);
+              if (!(drawing2dMatrixCTM!.m11 == 0 && drawing2dMatrixCTM!.m21 == 0 && _isNextFill) &&
+                  elements != null) {
+                _getClipRectangle(elements);
               }
               break;
             }
@@ -518,18 +514,9 @@ class ImageRenderer {
                 result.offsetX,
                 result.offsetY,
               );
-              MatrixHelper graphicsTransformMatrix = MatrixHelper(
-                1,
-                0,
-                0,
-                1,
-                0,
-                0,
-              );
-              graphicsTransformMatrix =
-                  graphicsTransformMatrix * transformMatrix;
-              _graphicsObject!.transformMatrix =
-                  MatrixHelper(1, 0, 0, 1, 0, 0) * transformMatrix;
+              MatrixHelper graphicsTransformMatrix = MatrixHelper(1, 0, 0, 1, 0, 0);
+              graphicsTransformMatrix = graphicsTransformMatrix * transformMatrix;
+              _graphicsObject!.transformMatrix = MatrixHelper(1, 0, 0, 1, 0, 0) * transformMatrix;
               break;
             }
           case 'W':
@@ -588,8 +575,7 @@ class ImageRenderer {
     }
     fontSize = double.tryParse(fontElements[i + 1]);
     if (_resources!.containsKey(currentFont)) {
-      final FontStructure structure =
-          _resources![currentFont!] as FontStructure;
+      final FontStructure structure = _resources![currentFont!] as FontStructure;
       if (structure.isStandardFont) {
         structure.createStandardFont(fontSize!);
       } else if (structure.isStandardCJKFont) {
@@ -603,15 +589,10 @@ class ImageRenderer {
     if ((-textLeading!) != 0) {
       _currentLocation = Offset(
         _currentLocation!.dx,
-        (-textLeading!) < 0
-            ? _currentLocation!.dy - (-textLeading!)
-            : _currentLocation!.dy + (-textLeading!),
+        (-textLeading!) < 0 ? _currentLocation!.dy - (-textLeading!) : _currentLocation!.dy + (-textLeading!),
       );
     } else {
-      _currentLocation = Offset(
-        _currentLocation!.dx,
-        _currentLocation!.dy + fontSize!,
-      );
+      _currentLocation = Offset(_currentLocation!.dx, _currentLocation!.dy + fontSize!);
     }
   }
 
@@ -643,10 +624,8 @@ class ImageRenderer {
         _graphicsState = result['graphicStates'] as GraphicStateCollection?;
         graphicsObjects = result['objects'] as GraphicObjectDataCollection?;
         xObjectGlyphs = result['glyphList'] as List<Glyph>?;
-        final List<TextElement>? tempExtractTextElement =
-            result['extractTextElement'] as List<TextElement>?;
-        if (tempExtractTextElement != null &&
-            tempExtractTextElement.isNotEmpty) {
+        final List<TextElement>? tempExtractTextElement = result['extractTextElement'] as List<TextElement>?;
+        if (tempExtractTextElement != null && tempExtractTextElement.isNotEmpty) {
           extractTextElement.addAll(tempExtractTextElement);
         }
         imageRenderGlyphList.addAll(xObjectGlyphs!);
@@ -655,31 +634,19 @@ class ImageRenderer {
     }
   }
 
-  void _renderTextElementWithLeading(
-    List<String> textElements,
-    String tokenType,
-  ) {
+  void _renderTextElementWithLeading(List<String> textElements, String tokenType) {
     String text = textElements.join();
     final List<dynamic> retrievedCharCodes = <dynamic>[];
     if (_resources!.containsKey(currentFont)) {
-      final FontStructure structure =
-          _resources![currentFont!] as FontStructure;
+      final FontStructure structure = _resources![currentFont!] as FontStructure;
       structure.isSameFont = _resources!.isSameFont();
       structure.fontSize = fontSize;
-      if (!structure.isEmbedded &&
-          structure.font != null &&
-          structure.isStandardCJKFont) {
+      if (!structure.isEmbedded && structure.font != null && structure.isStandardCJKFont) {
         text = structure.fromUnicodeText(structure.getEncodedText(text, true));
-      } else if (!structure.isEmbedded &&
-          structure.font != null &&
-          structure.isStandardFont) {
+      } else if (!structure.isEmbedded && structure.font != null && structure.isStandardFont) {
         text = structure.getEncodedText(text, true);
       } else {
-        text = structure.decodeTextExtraction(
-          text,
-          _resources!.isSameFont(),
-          retrievedCharCodes,
-        );
+        text = structure.decodeTextExtraction(text, _resources!.isSameFont(), retrievedCharCodes);
       }
       if (_actualText != null && _actualText!.isNotEmpty) {
         text = _actualText!;
@@ -724,10 +691,7 @@ class ImageRenderer {
         _endTextPosition = currentLocation!;
         final Map<String, dynamic> renderedResult = element.renderTextElement(
           _graphicsObject,
-          Offset(
-            _endTextPosition.dx,
-            _endTextPosition.dy + ((-textLeading!) / 4),
-          ),
+          Offset(_endTextPosition.dx, _endTextPosition.dy + ((-textLeading!) / 4)),
           _textScaling,
           glyphWidths,
           structure.type1GlyphHeight,
@@ -740,16 +704,10 @@ class ImageRenderer {
         _textElementWidth = renderedResult['textElementWidth'] as double;
         textMatrix = renderedResult['tempTextMatrix'] as MatrixHelper;
       } else {
-        _endTextPosition = Offset(
-          _endTextPosition.dx + _textElementWidth,
-          _endTextPosition.dy,
-        );
+        _endTextPosition = Offset(_endTextPosition.dx + _textElementWidth, _endTextPosition.dy);
         final Map<String, dynamic> renderedResult = element.renderTextElement(
           _graphicsObject,
-          Offset(
-            _endTextPosition.dx,
-            _endTextPosition.dy + (-textLeading! / 4),
-          ),
+          Offset(_endTextPosition.dx, _endTextPosition.dy + (-textLeading! / 4)),
           _textScaling,
           glyphWidths,
           structure.type1GlyphHeight,
@@ -762,20 +720,12 @@ class ImageRenderer {
         textMatrix = renderedResult['tempTextMatrix'] as MatrixHelper;
       }
       if (!structure.isWhiteSpace) {
-        if (_whiteSpace.isNotEmpty &&
-            extractTextElement.isNotEmpty &&
-            _whiteSpace.length == 1) {
-          if (extractTextElement[extractTextElement.length - 1]
-                      .textLineMatrix!
-                      .offsetY ==
+        if (_whiteSpace.isNotEmpty && extractTextElement.isNotEmpty && _whiteSpace.length == 1) {
+          if (extractTextElement[extractTextElement.length - 1].textLineMatrix!.offsetY ==
                   element.textLineMatrix!.offsetY &&
-              _whiteSpace[0].textLineMatrix!.offsetY ==
-                  element.textLineMatrix!.offsetY) {
+              _whiteSpace[0].textLineMatrix!.offsetY == element.textLineMatrix!.offsetY) {
             if (_whiteSpace[0].text.isNotEmpty) {
-              element.textElementGlyphList.insert(
-                0,
-                _whiteSpace[0].textElementGlyphList[0],
-              );
+              element.textElementGlyphList.insert(0, _whiteSpace[0].textElementGlyphList[0]);
             }
             extractTextElement.add(_whiteSpace[0]);
           }
@@ -792,39 +742,24 @@ class ImageRenderer {
     }
   }
 
-  void _renderTextElementWithSpacing(
-    List<String> textElements,
-    String tokenType,
-  ) {
+  void _renderTextElementWithSpacing(List<String> textElements, String tokenType) {
     List<String> decodedList = <String>[];
-    Map<List<dynamic>, String> decodedListCollection =
-        <List<dynamic>, String>{};
+    Map<List<dynamic>, String> decodedListCollection = <List<dynamic>, String>{};
     final String text = textElements.join();
     if (_resources!.containsKey(currentFont)) {
-      final FontStructure structure =
-          _resources![currentFont!] as FontStructure;
+      final FontStructure structure = _resources![currentFont!] as FontStructure;
       structure.isSameFont = _resources!.isSameFont();
       structure.fontSize = fontSize;
       List<double>? characterSpacings;
-      if (!structure.isEmbedded &&
-          structure.isStandardCJKFont &&
-          structure.font != null) {
-        decodedList = structure.decodeCjkTextExtractionTJ(
-          text,
-          _resources!.isSameFont(),
-        );
+      if (!structure.isEmbedded && structure.isStandardCJKFont && structure.font != null) {
+        decodedList = structure.decodeCjkTextExtractionTJ(text, _resources!.isSameFont());
         for (final String decodedString in decodedList) {
           decodedListCollection[<dynamic>[]] = decodedString;
         }
       } else {
-        decodedListCollection = structure.decodeTextExtractionTJ(
-          text,
-          _resources!.isSameFont(),
-        );
+        decodedListCollection = structure.decodeTextExtractionTJ(text, _resources!.isSameFont());
       }
-      final List<int> bytes = utf8.encode(
-        structure.getEncodedText(text, _resources!.isSameFont()),
-      );
+      final List<int> bytes = utf8.encode(structure.getEncodedText(text, _resources!.isSameFont()));
       final Map<int, int> encodedTextBytes = <int, int>{};
       int z = 0;
       for (int j = 0; j < bytes.length; j = j + 2) {
@@ -875,10 +810,7 @@ class ImageRenderer {
         _isCurrentPositionChanged = false;
         _endTextPosition = currentLocation!;
       } else {
-        _endTextPosition = Offset(
-          _endTextPosition.dx + _textElementWidth,
-          _endTextPosition.dy,
-        );
+        _endTextPosition = Offset(_endTextPosition.dx + _textElementWidth, _endTextPosition.dy);
       }
       final Map<String, dynamic> renderedResult = element.renderWithSpacing(
         _graphicsObject,
@@ -896,20 +828,12 @@ class ImageRenderer {
       _textElementWidth = renderedResult['textElementWidth'] as double;
       textMatrix = renderedResult['tempTextMatrix'] as MatrixHelper;
       if (!structure.isWhiteSpace) {
-        if (_whiteSpace.isNotEmpty &&
-            extractTextElement.isNotEmpty &&
-            _whiteSpace.length == 1) {
-          if (extractTextElement[extractTextElement.length - 1]
-                      .textLineMatrix!
-                      .offsetY ==
+        if (_whiteSpace.isNotEmpty && extractTextElement.isNotEmpty && _whiteSpace.length == 1) {
+          if (extractTextElement[extractTextElement.length - 1].textLineMatrix!.offsetY ==
                   element.textLineMatrix!.offsetY &&
-              _whiteSpace[0].textLineMatrix!.offsetY ==
-                  element.textLineMatrix!.offsetY &&
+              _whiteSpace[0].textLineMatrix!.offsetY == element.textLineMatrix!.offsetY &&
               _whiteSpace[0].textElementGlyphList.isNotEmpty) {
-            element.textElementGlyphList.insert(
-              0,
-              _whiteSpace[0].textElementGlyphList[0],
-            );
+            element.textElementGlyphList.insert(0, _whiteSpace[0].textElementGlyphList[0]);
             extractTextElement.add(_whiteSpace[0]);
           }
           _whiteSpace = <TextElement>[];
@@ -941,29 +865,14 @@ class ImageRenderer {
     textLineMatrix = textMatrix!.clone();
   }
 
-  void _setTextMatrix(
-    double a,
-    double b,
-    double c,
-    double d,
-    double e,
-    double f,
-  ) {
+  void _setTextMatrix(double a, double b, double c, double d, double e, double f) {
     textMatrix = MatrixHelper(a, b, c, d, e, f);
     textLineMatrix = textMatrix!.clone();
   }
 
-  MatrixHelper _setMatrix(
-    double a,
-    double b,
-    double c,
-    double d,
-    double e,
-    double f,
-  ) {
+  MatrixHelper _setMatrix(double a, double b, double c, double d, double e, double f) {
     currentTransformationMatrix =
-        MatrixHelper(a, b, c, d, e, f) *
-        graphicsObjects!.last.currentTransformationMatrix!;
+        MatrixHelper(a, b, c, d, e, f) * graphicsObjects!.last.currentTransformationMatrix!;
     return MatrixHelper(
       currentTransformationMatrix!.m11,
       currentTransformationMatrix!.m12,
