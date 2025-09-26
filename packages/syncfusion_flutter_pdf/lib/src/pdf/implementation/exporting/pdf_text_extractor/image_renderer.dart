@@ -532,12 +532,12 @@ class ImageRenderer {
 
   MatrixHelper _getTextRenderingMatrix(bool isPath) {
     MatrixHelper mat = MatrixHelper(
-      fontSize! * (objects.horizontalScaling! / 100),
+      fontSize! * ((objects.horizontalScaling ?? 100) / 100),
       0,
       0,
       isPath ? fontSize! : (-fontSize!),
       0,
-      (isPath ? objects.rise! : (fontSize! + objects.rise!)) as double,
+      (isPath ? (objects.rise ?? 0) : (fontSize! + (objects.rise ?? 0))) as double,
     );
     mat *= textLineMatrix! * currentTransformationMatrix!;
     return mat;
@@ -669,20 +669,20 @@ class ImageRenderer {
       element.isEmbeddedFont = structure.isEmbedded;
       element.currentTransformationMatrix = currentTransformationMatrix;
       element.textLineMatrix = textMatrix;
-      element.rise = objects.rise;
+      element.rise = objects.rise ?? 0;
       element.transformMatrix = documentMatrix;
       element.documentMatrix = documentMatrix;
       element.fontId = currentFont;
       element.octDecMapTable = structure.octDecMapTable;
-      element.textHorizontalScaling = objects.horizontalScaling;
+      element.textHorizontalScaling = objects.horizontalScaling ?? 100;
       element.zapfPostScript = structure.zapfPostScript;
-      element.lineWidth = objects.mitterLength;
+      element.lineWidth = objects.mitterLength ?? 0;
       element.renderingMode = _renderingMode;
       element.pageRotation = pageRotation;
       element.zoomFactor = zoomFactor;
       element.substitutedFontsList = _substitutedFontsList;
-      element.wordSpacing = objects.wordSpacing;
-      element.characterSpacing = objects.characterSpacing;
+      element.wordSpacing = objects.wordSpacing ?? 0;
+      element.characterSpacing = objects.characterSpacing ?? 0;
       element.isExtractTextData = isExtractLineCollection;
       final MatrixHelper tempTextMatrix = MatrixHelper(0, 0, 0, 0, 0, 0);
       tempTextMatrix.type = MatrixTypes.identity;
@@ -786,14 +786,14 @@ class ImageRenderer {
       element.isEmbeddedFont = structure.isEmbedded;
       element.currentTransformationMatrix = currentTransformationMatrix;
       element.textLineMatrix = textMatrix;
-      element.rise = objects.rise;
+      element.rise = objects.rise ?? 0;
       element.transformMatrix = documentMatrix;
       element.documentMatrix = documentMatrix;
       element.fontId = currentFont;
       element.octDecMapTable = structure.octDecMapTable;
-      element.textHorizontalScaling = objects.horizontalScaling;
+      element.textHorizontalScaling = objects.horizontalScaling ?? 100;
       element.zapfPostScript = structure.zapfPostScript;
-      element.lineWidth = objects.mitterLength;
+      element.lineWidth = objects.mitterLength ?? 0;
       element.renderingMode = _renderingMode;
       element.pageRotation = pageRotation;
       element.zoomFactor = zoomFactor;
@@ -802,8 +802,8 @@ class ImageRenderer {
       if (structure.flags != null) {
         element.fontFlag = structure.flags!.value!.toInt();
       }
-      element.wordSpacing = objects.wordSpacing;
-      element.characterSpacing = objects.characterSpacing;
+      element.wordSpacing = objects.wordSpacing ?? 0;
+      element.characterSpacing = objects.characterSpacing ?? 0;
       final MatrixHelper tempTextMatrix = MatrixHelper(0, 0, 0, 0, 0, 0);
       tempTextMatrix.type = MatrixTypes.identity;
       if (_isCurrentPositionChanged) {
